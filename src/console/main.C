@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 {
   int ret=0;			// reusable return value
 
-  modem m("/dev/ttyS0");	// modem object
+  modem m("/dev/ttyS0", 0);	// modem object, non-cannonical
 
 
   ///////////////////////////////////// MODEM INITIALIZATION 

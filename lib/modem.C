@@ -4,23 +4,35 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <termios.h>
+//#include <termios.h>
 #include <sys/types.h>
 
 
 
-modem::modem(char *dev)
+modem::modem(char *dev, int canon)
 {
+  // use cannonical mode
+  if(canon)
+    cannonical = 1;
+  else
+    cannonical = 0;
+
   test=1;		       // test harnes variable
   device = dev;
   initString = "ATZ\r";
   resetString = "AT&F0\r";
 }
 
-modem::modem(char *dev, char *init, char *reset)
+modem::modem(char *dev, char *init, char *reset, int canon)
 {
   /* instatiate the modem and set it up
    */
+
+  // use cannonical mode
+  if(canon)
+    cannonical = 1;
+  else
+    cannonical = 0;
 
   device = dev;			// the terminal device name
   initString = init;		// the initialization string
@@ -52,6 +64,9 @@ modem::open_modem()
   if( ret = tcgetattr(fd, &options) == -1) 
     return ret;  
 
+  //save the old options internally
+  oldOptions = options;
+
   /* Don't use memset on the entire structure -it's not entirely portable
      memset(&options, 0, sizeof(options)); 
   */
@@ -63,36 +78,41 @@ modem::open_modem()
   options.c_lflag=0;		// local modes
   memset(&options.c_cc, 0, sizeof(cc_t)); // control charecters
 
-  /*  line disciplin (ok to use tcgetattr data here usually)
-      options.c_line=options.c_line; // (not used)
-  */
 
-  /* change settings
-  options.c_iflag |= (IGNPAR); // (production programs don't use this) 
-  */
-
-  options.c_iflag |= (INLCR | IGNBRK);
-  options.c_oflag |= (ONOCR| OCRNL | HUPCL);
-
-
-  if(ismodem())	
-    options.c_cflag |= (CS8 | CREAD); // modem line
-  else
-    options.c_cflag |= (CS8 | CLOCAL | CREAD); // non-modem line 
-
-  //setup for blocking at a read (non-cannonical mode)
-  options.c_cc[VMIN] = 1;
-  options.c_cc[VTIME] = 0;
-
-  //setup baudrate (think... compatibility)
-   cfsetospeed(&options, B9600);
-   cfsetispeed(&options, B9600);
+  if(!cannonical ){
+    /*  line disciplin (ok to use tcgetattr data here usually)
+	options.c_line=;		// (not used)
+    */
+    
+    // change settings
+    
+    /* 
+       options.c_iflag |= (IGNPAR); // (production programs don't use this) 
+    */
+    
+    options.c_iflag |= (INLCR | IGNBRK);
+    options.c_oflag |= (ONOCR| OCRNL | HUPCL);
+    
+    
+    if(ismodem())	
+      options.c_cflag |= (CS8 | CREAD); // modem line
+    else
+      options.c_cflag |= (CS8 | CLOCAL | CREAD); // non-modem line 
+    
+    //setup for blocking at a read (non-cannonical mode)
+    options.c_cc[VMIN] = 1;	// at least 1 char
+    options.c_cc[VTIME] = 0;
+  }
+    
+    //setup baudrate (think... compatibility)
+    cfsetospeed(&options, B9600);
+    cfsetispeed(&options, B9600);
   
    //save settings
   if( (ret = tcsetattr(fd, TCSANOW, &options)) < 0) 
     return ret;
 
-  //flush the line
+  //flush the line -for good measure
   tcsetattr(fd,TCSAFLUSH,&options);
 
   //turn off nonblock mode (to block at reads)
@@ -114,6 +134,12 @@ modem::close_modem()
 {
   //reset the modem
   write_command(resetString);
+
+  //resotore options
+  tcsetattr(fd, TCSANOW, &oldOptions);
+
+  //flush the line
+  tcsetattr(fd,TCSAFLUSH,&oldOptions);
 
   //close the modem descripter
   return (close(fd));
@@ -201,14 +227,15 @@ modem::read_modem()
   response.erase();
   response = buffer;
 
-  /* sleep(1): let data get to the modem
-     I'm still working out why this has to be here.
-     The read returns too fast (seemingly) and causes
-     the program to terminate otherwise. The problem 
-     should be fixable with an ioctl call to set blocking
-     but that should have been ok from the open -i thought
-  */
-  sleep(1);
+
+  if(cannonical){
+    /* sleep(1): let data get to the modem
+       This is here because we're using non-cannonical mode
+       for a cannonical mode version of this program see cid-console2 of
+       this project.
+    */
+    sleep(1);
+  }
 
   //return number of bytes read
   return ret;

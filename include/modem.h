@@ -4,20 +4,24 @@
 #define MYCID_MODEM_H
 
 #include <string>
+#include <termios.h>
 
 class modem
 {
+  int cannonical;		/* cannonical mode indicator */
   int fd;			/* device descriptor */
   string device;		/* name of the device */
   string initString;		/* string for opening*/
   string resetString;		/* string for closing */
   string response;		/* response from write */
+  struct termios oldOptions;	/* original termios structure for
+				   modem config */
 
  public:
 
   /* constructors */
-  modem(char *dev);
-  modem(char *dev, char *init, char *reset);
+  modem(char *dev, int canon);
+  modem(char *dev, char *init, char *reset, int canon);
 
   /* destruct (calls close_modem) */
   virtual ~modem();
