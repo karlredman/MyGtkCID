@@ -1,3 +1,13 @@
+2003-10-02  Karl Redman  <parasyte@scyld.localnet>
+
+	* modem.C: cannonical mode change ability added -for console2 later
+
+	* modem.C: code cleanup
+
+2003-09-30  Karl Redman  <parasyte@scyld.localnet>
+
+	* modem.C, cid_string.C: console product checking
+
 2003-09-29  Karl Redman  <parasyte@scyld.localnet>
 
 	* include/config.h, include/stamp-h: added files for project
