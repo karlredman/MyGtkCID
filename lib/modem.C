@@ -79,7 +79,6 @@ modem::open_modem()
   memset(&options.c_cc, 0, sizeof(cc_t)); // control charecters
 
 
-  if(!cannonical ){
     /*  line disciplin (ok to use tcgetattr data here usually)
 	options.c_line=;		// (not used)
     */
@@ -90,18 +89,24 @@ modem::open_modem()
        options.c_iflag |= (IGNPAR); // (production programs don't use this) 
     */
     
-    options.c_iflag |= (INLCR | IGNBRK);
-    options.c_oflag |= (ONOCR| OCRNL | HUPCL);
-    
-    
     if(ismodem())	
       options.c_cflag |= (CS8 | CREAD); // modem line
     else
       options.c_cflag |= (CS8 | CLOCAL | CREAD); // non-modem line 
     
+  if(!cannonical ){
     //setup for blocking at a read (non-cannonical mode)
+
+    options.c_iflag |= (IGNBRK);
+    options.c_oflag |= (ONOCR| OCRNL | HUPCL);
+    
     options.c_cc[VMIN] = 1;	// at least 1 char
     options.c_cc[VTIME] = 0;
+  }
+  else {
+
+    
+    
   }
     
     //setup baudrate (think... compatibility)
@@ -228,7 +233,7 @@ modem::read_modem()
   response = buffer;
 
 
-  if(cannonical){
+  if(!cannonical){
     /* sleep(1): let data get to the modem
        This is here because we're using non-cannonical mode
        for a cannonical mode version of this program see cid-console2 of
