@@ -158,7 +158,7 @@ modem::write_command(int fd, const char *command)
     return ret;
   else {
     memcpy(buffer, command, strlen(command));
-    //buffer[strlen(command)] = '\0';
+    buffer[strlen(command)] = '\0';
     buffer[strlen(command)-1] = '\0';
   }
 
@@ -208,6 +208,15 @@ modem::read_modem()
   //set response variable
   response.erase();
   response = buffer;
+
+  /* sleep(1): let data get to the modem
+     I'm still working out why this has to be here.
+     The read returns too fast (seemingly) and causes
+     the program to terminate otherwise. The problem 
+     should be fixable with an ioctl call to set blocking
+     but that should have been ok from the open -i thought
+  */
+  sleep(1);
 
   //return number of bytes read
   return ret;
