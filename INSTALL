@@ -1,3 +1,14 @@
+This is the MyCID INSTALL FILE:
+
+To build the project:
+1. ". ./my_automake"
+2. "make"
+3. run the programs under the src/ directory
+
+If the above doesn't work then try reading the following.
+if all else fails, email me: kredman@sleepingstill.com
+
+
 Basic Installation
 ==================
 

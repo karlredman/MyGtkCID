@@ -1,9 +1,19 @@
-This is the begginings of the modem programming for a personal portal system I was developing.
-THIS IS OLD CODE. I'm providing this code for example purposes only. The last time I checked 
-the console version of the program was broken.
+MyCID: README file
 
-Note that this program was developed using a Zoom 2949L external modem.
+
+This is a simple console and gtk+ GUI test program for reporting Caller ID information.  Note that this program was developed using a Zoom 2948L external modem.  The modem command is set to respond to AT+VCD=1 but you can change that if you wish. I built this program for testing and learning purposes -hope it helps.
+
+REQUIREMENTS:
+gtk+ development package: for the project to build	version 1.2.10
+glibc							version 1.2.10
+Zoom 2949L External comatible modem (uses AT+VCID=1 for Caller ID)
+
+TO BUILD THE PROJECT:
+1. '. ./my_automake` (my own script for automake options)
+2. 'make'
+3. run the programs under the src/ directory
 
 Sincerely, 
 Karl N. Redman
 kredman@sleepingstill.com
+
