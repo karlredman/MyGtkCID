@@ -17,8 +17,7 @@ AC_SUBST(GTK_LIBS)
 #
 AC_OUTPUT(Makefile include/Makefile lib/Makefile src/Makefile \
 src/console/Makefile \
-src/popup/Makefile \
-src/console2/Makefile) 
+src/popup/Makefile )
 ##
 ##
 ##
