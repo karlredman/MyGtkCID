@@ -1,4 +1,4 @@
-SUBDIRS = include lib src bin
+SUBDIRS = include lib src
 
 EXTRA_DIST = my_automake
 

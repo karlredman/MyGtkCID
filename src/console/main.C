@@ -56,7 +56,7 @@ void loop(modem &m)
   int numCalls=0;
   cid_string name, number, date, time;
 
-  while ((nbytes = m.read_modem()) > 0){
+  while ((nbytes = m.read_modem()) < 0){
 
     sprintf(buffer, "%s", m.getResponse().c_str());
     cout << "just read modem...\n" << "[" << buffer << "]" << endl;

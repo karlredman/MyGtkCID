@@ -58,13 +58,15 @@ POST_UNINSTALL = :
 AMTAR = @AMTAR@
 AWK = @AWK@
 CC = @CC@
-CPP = @CPP@
 CXX = @CXX@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
+GTK_CFLAGS = @GTK_CFLAGS@
+GTK_LIBS = @GTK_LIBS@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
 am__include = @am__include@
@@ -72,11 +74,11 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 INCLUDES = -I$(top_srcdir)/include
-CPPFLAGS = -g -Wall `gtk-config --cflags`
-LDFLAGS = -L$(top_srcdir)/lib `gtk-config --libs` -lpthread
+LDFLAGS = -L$(top_srcdir)/lib -L../../lib 
+AM_CPPFLAGS = -Wall $(GTK_CFLAGS)
 #
 bin_PROGRAMS = cid-popup
-cid_popup_LDADD = -lcid_modem -lcid_util
+cid_popup_LDADD = -lcid_modem -lcid_util -lpthread $(GTK_LIBS)
 cid_popup_SOURCES = \
         main.C 
 
@@ -94,6 +96,7 @@ cid_popup_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/include
+CPPFLAGS = @CPPFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/main.Po
@@ -111,7 +114,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .o .obj
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  src/popup/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status

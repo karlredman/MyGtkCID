@@ -20,12 +20,12 @@
 # ---end file--
 
 # 5. run GNU install tools
-if [ -e Makefile.am ] && [ -e configure.in ]; then
+if [ -e Makefile.am ] && [ -e configure.ac ]; then
 	aclocal
 	autoconf
-	automake -a
+	automake -a --include-deps
 	touch NEWS README AUTHORS ChangeLog
-	automake -a
+	automake -a --include-deps
 fi
 
 # 6. replace, update the following files NEWS README AUTHORS ChangLog + any
