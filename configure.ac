@@ -17,10 +17,11 @@ AC_SUBST(GTK_LIBS)
 #
 AC_OUTPUT(Makefile include/Makefile lib/Makefile src/Makefile \
 src/console/Makefile \
-src/popup/Makefile ) 
+src/popup/Makefile \
+src/console2/Makefile) 
 ##
 ##
 ##
 echo ""
-echo "--- Now run make, binaries will be in ./bin ---"
+echo "--- Now run make ---"
 echo ""

@@ -1,1 +1,1 @@
-SUBDIRS = console popup
+SUBDIRS = console popup console2

@@ -31,7 +31,12 @@ class modem
 
   //just read the modem
   int read_modem();
+  int ismodem();
   
   const string &getResponse() {return response;}		
 
+  //helper functions
+  int change_fl(int fd, int flags, int setclear);
+  int test_read_modem();
+  int test;
 };

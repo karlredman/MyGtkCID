@@ -5,20 +5,25 @@
 void 
 cid_string::chomp()
 {
-  // remove newlines from end of string
+  // remove newlines and carraige returns from end of string
   string::size_type idx;
 
-  idx = this->find('\n');
-
+  idx = this->find('\r');
   if( idx != string::npos){
     this->erase(idx, this->length());
   }
+  
+  idx = this->find('\n');
+  if( idx != string::npos){
+    this->erase(idx, this->length());
+  }
+
 }
 
 void 
 cid_string::getData()
 {
-  // seperate 'LABEL=' from data
+  // seperate 'LABEL=' from data (deleting LABEL=)
 
   string::size_type idx;
   
