@@ -1,5 +1,8 @@
 //modem.h
 
+#ifndef MYCID_MODEM_H
+#define MYCID_MODEM_H
+
 #include <string>
 
 class modem
@@ -12,31 +15,35 @@ class modem
 
  public:
 
+  /* constructors */
   modem(char *dev);
   modem(char *dev, char *init, char *reset);
 
-  //destruct (calls close_modem)
+  /* destruct (calls close_modem) */
   virtual ~modem();
 
-  //open the modem for raw mode
-  int open_modem();        
+  int open_modem();        	/* open modem in raw mode */
 
-  //close modem
-  int close_modem();
+  int close_modem();		/* close modem and reset */
 
-  //write a command to the modem and wait for 'OK'
+  /* write a command to the modem and wait for 'OK' */
   int write_command(int fd, const char *command);
   int write_command(string &command);
   int write_command(char *command);
 
-  //just read the modem
-  int read_modem();
-  int ismodem();
+  int read_modem();		/* just read the modem */
+
+  int ismodem();		/* always returns true (for now)*/
   
+  /* return the last modem character output */
   const string &getResponse() {return response;}		
 
-  //helper functions
+  /* change a fioctl flag */
   int change_fl(int fd, int flags, int setclear);
+  
+  /* test harnes for CID */
   int test_read_modem();
-  int test;
+  int test;			/* testing variable */
 };
+
+#endif MYCID_MODEM_H

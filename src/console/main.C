@@ -84,8 +84,7 @@ int loop(modem &m)
   cout << "------------ MyCID ------------------" << endl;
 
   //while (( nbytes = m.test_read_modem()) > 0){
-
-    while ((nbytes = m.read_modem()) > 0){
+  while ((nbytes = m.read_modem()) > 0){
 
     if( (idx = m.getResponse().find("NAME=", 0)) != string::npos){
       //just save the name
@@ -142,8 +141,8 @@ int loop(modem &m)
       time.erase();
 
       //print output
-      cout << "Call #" << numCalls << endl
-	   << CID_output.c_str() << endl;
+      cout << "Call #" << numCalls << endl;
+      cout << CID_output.c_str() << endl;
     }
     else {
       if(m.getResponse().find("RING") != string::npos){

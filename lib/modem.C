@@ -156,11 +156,6 @@ modem::write_command(int fd, const char *command)
   //write the string
   if( (ret = write(fd, command, strlen(command)) ) < 0)
     return ret;
-  else {
-    memcpy(buffer, command, strlen(command));
-    buffer[strlen(command)] = '\0';
-    buffer[strlen(command)-1] = '\0';
-  }
 
   //turn off nonblock
   change_fl(fd, O_NONBLOCK, 0);
@@ -187,9 +182,6 @@ modem::write_command(int fd, const char *command)
     memset(buffer, '\0', sizeof(buffer));
   }
       
-    //clear out buffer
-    memset(buffer, '\0', sizeof(buffer));
-
   return 0;
 }
 
