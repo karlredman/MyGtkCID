@@ -1,142 +1,91 @@
-//popup
-
-#include <pthread.h>
+//console
 
 #include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
 
-#include "modem.h"		// the modem class
-#include "cid_string.h"		// manages caller id type strings
+#include <modem.h>		// the modem class
+#include <cid_string.h>		// manages caller id type strings
 
-using namespace std;
+using namespace std;		// using STL
 
-void loop();
-//void loop_cleanup( pthread_mutex_t *mutex);
+int loop(modem &m);
 void fatal_error(int err_num, char *function);
 int modem_ack(void *data);
-//int newCall = 0;		// track a new cal
-
-modem m("/dev/ttyS0");
-
-//pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_t tid;		// pthread ID for cancelation
 
 
 int main(int argc, char *argv[])
 {
   int ret=0;			// reusable return value
-  int ptimer;			// timer return value
-  int ptimer2;			// timer return value
 
-  //modem m("/dev/ttyS0");
-
-  //ptimer = gtk_timeout_add(1000, popup, (void *)&m);
-  //ptimer = gtk_timeout_add(1000, popup, NULL);
-
-  //ptimer2 = gtk_timeout_add(10000, modem_ack, NULL);
+  modem m("/dev/ttyS0");	// modem object
 
 
   ///////////////////////////////////// MODEM INITIALIZATION 
-
   //open the modem
-  cout << "opening modem" << endl;
+  cout << "Initializing modem: " ;
   if ( (ret = m.open_modem()) == -1) {
     cout << "open_modem() FAILED\n" << endl;
     exit(1);
   }
+  else
+    cout << "[OK]" << endl;
 
   //set CID commands
   cout << "Initializing CID: ";
   if((ret = m.write_command("AT+VCID=1\r")) == -1) {
-    cout << "FAILED" << endl;
+    cout << "Initialization FAILED" << endl;
     exit(1);
   }
-  //else { 
-    //cout << m.getResponse() << endl; }
-
-
+  else
+    cout << "[OK]" << endl;
   //////////////////////////////////// END MODEM INITIALIZATION
 
-
-
-  /////////////////////////////////// BEGIN PTHREAD THING
-  //start modem loop thread
-  //ret = pthread_create(&tid, (pthread_attr_t *)NULL, 
-		       //(void *(*)(void*))loop, (void *)NULL);
-
-  //if(ret != 0)
-    //fatal_error(ret, "pthread_create()");
-
-
-
-  /////////////////////////////////// END PTHREAD THING
-
-  loop();
+  //run man loop
+  ret = loop(m);
   
-  //program ending, join thread
-  //ret = pthread_join(tid, (void **)NULL);
-
-  //if(ret != 0)
-    //fatal_error(ret, "pthread_join()");
-
-  return 0;
+  return ret;
 }
 
 
-int modem_ack(void *data)
+int modem_ack(modem &m)
 {
+  // "ping" the modem so it doesn't reset 
+
   int ret;
 
-  //"ping" the modem so it doesn't reset
   cout << "Checking modem responsiveness: ";
   if((ret = m.write_command("AT\r")) == -1) {
     cout << "FAILED" << endl;
-    exit(1);
+    return false;
   }
   else { 
-    cout << m.getResponse() << endl; }
+    cout << "[OK]" << endl; 
+  }
   
   return true;
 }
 
-void loop()
+int loop(modem &m)
 {
-  int nbytes;		/* num bytes read */
-  int numCalls=0;
-  string CID_output;
-  cid_string name, number, date, time, tmp;
-  char strCalls[20];
+  int nbytes;			// num bytes read
+  int numCalls=0;		// number of calls
+  string CID_output;		// formatted output string
 
-  //modem_ack(NULL);
-
-  cout << "------------ Loop ------------------" << endl;
-
-  //install a thread cancelation routine
-  //pthread_cleanup_push((void (*)(void *))loop_cleanup, (void *)&mutex);
-
-  /////////////////////////// debug
-  //CID_output.erase();
-//   CID_output = "Call #3\n";
-//   CID_output += "NAME: Redman, Karl\n";
-//   CID_output += "NMBR: 708-771-0517\n";
-//   CID_output += "TIME: 10:22\n";
-//   CID_output += "DATE: 10/03";
-  
-//   //newCall=1;
-//   while(1)
-//     {
-//       popup((void *)CID_output.c_str());
-//       cout << CID_output << endl;
-//       sleep(10);
-//     }
-  /////////////////////////// end debug
+  cid_string name, 		// data name
+    number, 			// data number
+    date, 			// data date
+    time, 			// data time
+    tmp;			// tmp string
 
   string::size_type idx = 0;
 
-  while ((nbytes = m.read_modem()) > 0){
-    //while (( nbytes = m.test_read_modem()) > 0){
-    //cout<< "loop" << endl;
+  //modem_ack(NULL);
+
+  cout << "------------ MyCID ------------------" << endl;
+
+  //while (( nbytes = m.test_read_modem()) > 0){
+
+    while ((nbytes = m.read_modem()) > 0){
 
     if( (idx = m.getResponse().find("NAME=", 0)) != string::npos){
       //just save the name
@@ -177,13 +126,11 @@ void loop()
     if( !name.empty() && !number.empty() && !date.empty()
 	&& !time.empty()){
 
+      //print data 
+
       numCalls++;
 
-      memset(strCalls, '\0', sizeof(strCalls));
-      sprintf(strCalls, "CALL #%d\n", numCalls);
-
       CID_output.erase();
-      CID_output = strCalls;
       CID_output += "NAME: " + name + "\n";
       CID_output += "NMBR: " + number + "\n";
       CID_output += "TIME: " + time + "\n";
@@ -194,20 +141,21 @@ void loop()
       date.erase();
       time.erase();
 
-      //popup((void *)CID_output.c_str());
-      //cout<< CID_output.c_str() << endl;
+      //print output
+      cout << "Call #" << numCalls << endl
+	   << CID_output.c_str() << endl;
     }
     else {
       if(m.getResponse().find("RING") != string::npos){
 	//just a new ring
-	//cout << "got ring " << endl;
+	cout << "RING" << endl;
       }
       else{
+	//something else came accross the line (try to display it)
+
 	tmp = m.getResponse();
 	tmp.chomp();
 	tmp.getData();
-	
-	//cout << tmp.c_str() << endl;
 	
 	cout << "looped: errno = " << errno 
 	     << ", nbytes = " << nbytes << ", "
@@ -222,9 +170,7 @@ void loop()
        << "Last modem response = \n" << "\t[" << m.getResponse() << "]" 
        << endl;
 
-  //cleanup and exit
-  //pthread_cleanup_pop(0);
-  pthread_exit(0);
+  return 0;
 }
 
 
@@ -237,8 +183,3 @@ fatal_error(int err_num, char *function)
         fprintf(stderr, "%s error: %s\n", function, err_string);
         exit(-1);
 }
-
-//void loop_cleanup( pthread_mutex_t *mutex)
-//{
-//  pthread_mutex_unlock(mutex);
-//}

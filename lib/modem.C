@@ -1,21 +1,17 @@
 //modem.C
 
-#include "modem.h"
+#include <modem.h>
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <poll.h>
-
 #include <sys/types.h>
+
 
 
 modem::modem(char *dev)
 {
-  test=1;
+  test=1;		       // test harnes variable
   device = dev;
   initString = "ATZ\r";
   resetString = "AT&F0\r";
@@ -23,16 +19,17 @@ modem::modem(char *dev)
 
 modem::modem(char *dev, char *init, char *reset)
 {
-  //instatiate the modem and set it up
+  /* instatiate the modem and set it up
+   */
 
-  test=1;
-  device = dev;
-  initString = init;
-  resetString = reset;
+  device = dev;			// the terminal device name
+  initString = init;		// the initialization string
+  resetString = reset;		// the reset string (usially 'ATZ')
 }
 
 modem::~modem()
 {
+  // shutdown the modem
   close_modem();
 }
 
@@ -40,16 +37,14 @@ int
 modem::open_modem()
 {
 
-  /* open the modem
-     configure the modem for raw mode
-  */
+  /* open the modem and configure the modem for raw mode
+   */
   
-  struct termios options;
+  struct termios options;	//termios structure for modem config 
+  int ret=0;			// return values
 
-  int ret=0;
 
-
-  /* open the port */
+  // open the port
   if( (fd = open(device.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK | O_NDELAY)) <= 1) {
     return fd; }
 
@@ -57,37 +52,39 @@ modem::open_modem()
   if( ret = tcgetattr(fd, &options) == -1) 
     return ret;  
 
-  //don't use memset on the entire structure -it's not entirely portable
-  //memset(&options, 0, sizeof(options)); 
+  /* Don't use memset on the entire structure -it's not entirely portable
+     memset(&options, 0, sizeof(options)); 
+  */
 
-  //clear out the flags 
+  //clear out the termios flags 
   options.c_iflag=0;		// input modes
   options.c_oflag=0;		// output modes
   options.c_cflag=0;		// control modes
   options.c_lflag=0;		// local modes
   memset(&options.c_cc, 0, sizeof(cc_t)); // control charecters
 
-  /*  line disciplin (ok to use tcgetattr data here)
-      options.c_line=options.c_line; 
+  /*  line disciplin (ok to use tcgetattr data here usually)
+      options.c_line=options.c_line; // (not used)
   */
 
+  /* change settings
+  options.c_iflag |= (IGNPAR); // (production programs don't use this) 
+  */
 
-  //change settings
-  //options.c_iflag |= (ICRNL | IGNPAR);
   options.c_iflag |= (INLCR | IGNBRK);
   options.c_oflag |= (ONOCR| OCRNL | HUPCL);
 
 
-  if(ismodem())			// use CLOCAL non-modem controled line
-    options.c_cflag |= (CS8 | CREAD);
+  if(ismodem())	
+    options.c_cflag |= (CS8 | CREAD); // modem line
   else
-    options.c_cflag |= (CS8 | CLOCAL | CREAD);
+    options.c_cflag |= (CS8 | CLOCAL | CREAD); // non-modem line 
 
   //setup for blocking at a read (non-cannonical mode)
   options.c_cc[VMIN] = 1;
   options.c_cc[VTIME] = 0;
 
-  //setup baudrate
+  //setup baudrate (think... compatibility)
    cfsetospeed(&options, B9600);
    cfsetispeed(&options, B9600);
   
@@ -95,13 +92,14 @@ modem::open_modem()
   if( (ret = tcsetattr(fd, TCSANOW, &options)) < 0) 
     return ret;
 
+  //flush the line
   tcsetattr(fd,TCSAFLUSH,&options);
 
-  //turn off nonblock
+  //turn off nonblock mode (to block at reads)
   if( (ret = this->change_fl(fd, O_NONBLOCK, 0) < 0))
     return ret;
 
-  //now turn off O_NDELAY (used for open)
+  //now turn off O_NDELAY (antiquated but still necessary)
   if( (ret = this->change_fl(fd, O_NDELAY, 0) < 0))
     return ret;
 
@@ -114,7 +112,10 @@ modem::open_modem()
 int
 modem::close_modem()
 {
+  //reset the modem
   write_command(resetString);
+
+  //close the modem descripter
   return (close(fd));
 }
 
@@ -133,42 +134,38 @@ modem::write_command(string &command)
 int
 modem::write_command(int fd, const char *command)
 {
-  /* Initialize the modem -writes a string and waits for 'OK'.
+  /* writes a string and waits for 'OK'.
      Function assumes that echo is ON.
+
+     returns -1 on error.
   */
 
-  char buffer[255];	/* modem output buffer */
-  char *bufptr=buffer;	/* pointer to buffer */
-  int nbytes;		/* num bytes read */
-  int ret=0;		/* func. call ret. val. */
-  int reading = 0;		// loop control
-
-  int tbytes=0;
+  char buffer[255];		// modem output buffer 
+  int nbytes;			// num bytes read 
+  int ret=0;			// func. call ret. val. 
 
   if(strlen(command) <= 0){
     return -1; }
 
   
   memset(buffer, '\0', sizeof(buffer));
-  //memcpy(buffer, command, strlen(command));
-  //buffer[strlen(command)] = '\r';
-
   
+  //turn on nonblock
   change_fl(fd, O_NONBLOCK, 1);
 
-  //write the init string
+  //write the string
   if( (ret = write(fd, command, strlen(command)) ) < 0)
     return ret;
   else {
     memcpy(buffer, command, strlen(command));
-    buffer[strlen(command)] = '\0';
+    //buffer[strlen(command)] = '\0';
     buffer[strlen(command)-1] = '\0';
-    cout << "write: wrote " << ret << "bytes" 
-      "[" << buffer << "]" << endl;
   }
 
+  //turn off nonblock
   change_fl(fd, O_NONBLOCK, 0);
   
+  //set buffer with null chars
   memset(buffer, '\0', sizeof(buffer));
 
   //try to read the response
@@ -186,13 +183,12 @@ modem::write_command(int fd, const char *command)
 	return -1;
       }
 
+    //clear out buffer (interum)
     memset(buffer, '\0', sizeof(buffer));
   }
       
+    //clear out buffer
     memset(buffer, '\0', sizeof(buffer));
-
-    //read last newlines
-    //    nbytes = read(fd, buffer, 2);
 
   return 0;
 }
@@ -203,12 +199,17 @@ modem::read_modem()
   char buffer[255];
   int ret;
 
+  //zero out buffer
   memset(buffer, '\0', sizeof(buffer));
+
+  //read from modem (blockig expected)
   ret = read(fd, buffer, sizeof(buffer));
+  
+  //set response variable
   response.erase();
   response = buffer;
-  sleep(1);
-  
+
+  //return number of bytes read
   return ret;
 }
 
@@ -277,6 +278,7 @@ modem::change_fl(int fd, int flags, int setclear)
 
   int val;
 
+  //get descripter flags
   if( (val = fcntl(fd, F_GETFL, 0) < 0) ) {
       return val;
   }
@@ -286,18 +288,19 @@ modem::change_fl(int fd, int flags, int setclear)
   else
     val &= ~flags;		// turn off flags 
 
+  //set flags
   if( (val = fcntl(fd, F_SETFL, val)) < 0) {
     return val;
   }
-  else {
-    val = fcntl(fd, F_GETFL, 0);
-  }
 
-  return val;
+  return -1;
 }
 
 int
 modem::ismodem()
 {
+  /* This class expects that this is a modem.
+     maybe something more technical for the future.
+  */
   return 1;
 }
