@@ -4,6 +4,7 @@
 ## languag usage
 *.c linguist-language=c
 *.cc linguist-language=cpp
+*.C linguist-language=cpp
 ## documentation
 AUTHORS linguist-documentation
 COPYING linguist-documentation
